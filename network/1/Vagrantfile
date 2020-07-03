@@ -1,0 +1,82 @@
+Vagrant.configure("2") do |config|
+
+  config.vm.define "vm1" do |vm1|
+    vm1.vm.box = "ubuntu/focal64"
+    vm1.vm.hostname = "vm1"	 
+    vm1.vm.network "private_network", ip: "192.168.1.5",
+      gateway: "192.168.1.1",
+      subnet: "255.255.255.0"
+    vm1.vm.provider "virtualbox" do |vb|
+    vb.name = "vm1"
+    vb.memory = "2048"
+  end
+
+  vm1.vm.provision "shell", inline: <<-SHELL
+      apt update
+      sudo apt install net-tools
+      sudo apt install traceroute
+      sudo ip route add 192.168.2.0/24 via 192.168.1.1
+    SHELL
+  end
+
+  config.vm.define "vm2" do |vm2|
+    vm2.vm.box = "ubuntu/focal64"
+    vm2.vm.hostname = "vm2"	 
+    vm2.vm.network "private_network", ip: "192.168.2.10",
+      gateway: "192.168.2.1",
+      subnet: "255.255.255.0"
+    vm2.vm.provider "virtualbox" do |vb|
+    vb.name = "vm2"
+    vb.memory = "2048"
+  end
+
+  vm2.vm.provision "shell", inline: <<-SHELL
+      sudo apt update
+      sudo apt install net-tools
+      sudo apt install traceroute
+      sudo ip route add 192.168.0.0/16 via 192.168.2.1
+      sudo ip route add 192.168.1.0/24 via 192.168.2.1
+    SHELL
+  end
+
+  config.vm.define "vm3" do |vm3|
+    vm3.vm.box = "ubuntu/focal64"
+    vm3.vm.hostname = "vm3"	 
+    vm3.vm.network "private_network", ip: "192.168.3.15",
+      gateway: "192.168.3.1",
+      subnet: "255.255.0.0"
+    vm3.vm.provider "virtualbox" do |vb|
+    vb.name = "vm3"
+    vb.memory = "2048"
+  end
+
+  vm3.vm.provision "shell", inline: <<-SHELL
+      apt update
+      sudo apt install net-tools
+      sudo apt install traceroute
+      sudo ip route add 192.168.1.0/24 via 192.168.3.1
+    SHELL
+  end
+
+  config.vm.define "router" do |router|
+    router.vm.box = "ubuntu/focal64"
+    router.vm.hostname = "router"	 
+    router.vm.network "private_network", ip: "192.168.1.1"
+    router.vm.network "private_network", ip: "192.168.2.1"
+    router.vm.network "private_network", ip: "192.168.3.1"
+    router.vm.provider "virtualbox" do |vb|
+    vb.name = "router"
+    vb.memory = "2048"
+  end
+
+  router.vm.provision "shell", inline: <<-SHELL
+      sudo apt update
+      sudo apt install net-tools
+      sudo apt install traceroute
+      echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward
+      sudo systemctl restart systemd-networkd.service
+    SHELL
+  end
+
+end
+
